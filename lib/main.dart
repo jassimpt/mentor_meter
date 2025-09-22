@@ -7,6 +7,7 @@ import 'package:web_scoket/WEBSOCKET/providers/websocket_provider.dart';
 import 'package:web_scoket/core/constants/supabase_constants.dart';
 import 'package:web_scoket/features/MentorMeter/modules/auth/controllers/auth_controller.dart';
 import 'package:web_scoket/features/MentorMeter/modules/reviewForm/controller/review_controller.dart';
+import 'package:web_scoket/features/MentorMeter/modules/scheduleform/controller/schedule_controller.dart';
 import 'package:web_scoket/features/MentorMeter/modules/splash/splash_screen.dart';
 
 void main() async {
@@ -39,6 +40,7 @@ class MyApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => WebSocketProvider()),
         ChangeNotifierProvider(create: (_) => AuthController()),
         ChangeNotifierProvider(create: (_) => ReviewController()),
+        ChangeNotifierProvider(create: (_) => ScheduleController()),
       ],
       child: MaterialApp(
         debugShowCheckedModeBanner: false,

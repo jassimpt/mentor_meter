@@ -6,8 +6,10 @@ import 'package:web_scoket/core/constants/app_constants.dart';
 import 'package:web_scoket/features/MentorMeter/modules/auth/controllers/auth_controller.dart';
 import 'package:web_scoket/features/MentorMeter/modules/home/widgets/review_card.dart';
 import 'package:web_scoket/features/MentorMeter/modules/reports/review_reports_screen.dart';
+import 'package:web_scoket/features/MentorMeter/modules/reports/schedule_reports_screen.dart';
 import 'package:web_scoket/features/MentorMeter/modules/reviewForm/controller/review_controller.dart';
 import 'package:web_scoket/features/MentorMeter/modules/reviewForm/review_form_screen.dart';
+import 'package:web_scoket/features/MentorMeter/modules/scheduleform/schedule_form_screen.dart';
 
 class HomeScreenMentor extends StatefulWidget {
   const HomeScreenMentor({super.key});
@@ -237,7 +239,13 @@ class _HomeScreenMentorState extends State<HomeScreenMentor>
                   opacity: _fadeAnimation,
                   child: SlideTransition(
                     position: _slideAnimation,
-                    child: _buildSaveReviewButton(),
+                    child: Row(
+                      children: [
+                        Expanded(child: _buildSaveReviewButton()),
+                        const SizedBox(width: 16),
+                        Expanded(child: _buildScheduleReviewButton()),
+                      ],
+                    ),
                   ),
                 ),
                 const SizedBox(height: 24),
@@ -457,15 +465,21 @@ class _HomeScreenMentorState extends State<HomeScreenMentor>
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.white,
+      isScrollControlled: true, // Add this to allow custom sizing
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
       builder: (context) => Container(
-        padding: const EdgeInsets.all(24),
+        constraints: BoxConstraints(
+          maxHeight: MediaQuery.of(context).size.height *
+              0.75, // Limit height to 75% of screen
+        ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
+            // Handle bar
             Container(
+              margin: const EdgeInsets.only(top: 16),
               width: 40,
               height: 4,
               decoration: BoxDecoration(
@@ -473,67 +487,91 @@ class _HomeScreenMentorState extends State<HomeScreenMentor>
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
-            const SizedBox(height: 24),
-            _buildMenuOption(
-              icon: Icons.person_outline,
-              title: 'Profile',
-              onTap: () {
-                Navigator.pop(context);
-                // Navigate to profile
-              },
-            ),
-            _buildMenuOption(
-              icon: Icons.assessment_outlined,
-              title: 'Review Reports',
-              onTap: () {
-                Navigator.pop(context);
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => ReviewReportsScreen(),
-                  ),
-                );
-              },
-            ),
-            _buildMenuOption(
-              icon: Icons.settings_outlined,
-              title: 'Settings',
-              onTap: () {
-                Navigator.pop(context);
-                // Navigate to settings
-              },
-            ),
-            _buildMenuOption(
-              icon: Icons.help_outline,
-              title: 'Developer Info',
-              onTap: () async {
-                Navigator.pop(context);
-                await _launchLinkedInProfile();
-              },
-            ),
-            const Divider(height: 32),
-            _buildMenuOption(
-              icon: Icons.logout_outlined,
-              title: 'Sign Out',
-              onTap: () async {
-                Navigator.pop(context);
-                final authController = context.read<AuthController>();
-                await authController.signOut();
-              },
-              isDestructive: true,
-            ),
-            const SizedBox(height: 16),
 
-            // App Version Display
-            Text(
-              _appVersion,
-              style: const TextStyle(
-                fontSize: 12,
-                color: Color.fromARGB(255, 116, 116, 116),
-                fontWeight: FontWeight.w400,
+            // Scrollable content
+            Flexible(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.fromLTRB(24, 24, 24, 16),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    _buildMenuOption(
+                      icon: Icons.person_outline,
+                      title: 'Profile',
+                      onTap: () {
+                        Navigator.pop(context);
+                        // Navigate to profile
+                      },
+                    ),
+                    _buildMenuOption(
+                      icon: Icons.assessment_outlined,
+                      title: 'Review Reports',
+                      onTap: () {
+                        Navigator.pop(context);
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => ReviewReportsScreen(),
+                          ),
+                        );
+                      },
+                    ),
+                    _buildMenuOption(
+                      icon: Icons.schedule_outlined,
+                      title: 'Schedule Reports',
+                      onTap: () {
+                        Navigator.pop(context);
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => ScheduleReportsScreen(),
+                          ),
+                        );
+                      },
+                    ),
+                    _buildMenuOption(
+                      icon: Icons.settings_outlined,
+                      title: 'Settings',
+                      onTap: () {
+                        Navigator.pop(context);
+                        // Navigate to settings
+                      },
+                    ),
+                    _buildMenuOption(
+                      icon: Icons.help_outline,
+                      title: 'Developer Info',
+                      onTap: () async {
+                        Navigator.pop(context);
+                        await _launchLinkedInProfile();
+                      },
+                    ),
+                    const Divider(height: 32),
+                    _buildMenuOption(
+                      icon: Icons.logout_outlined,
+                      title: 'Sign Out',
+                      onTap: () async {
+                        Navigator.pop(context);
+                        final authController = context.read<AuthController>();
+                        await authController.signOut();
+                      },
+                      isDestructive: true,
+                    ),
+                    const SizedBox(height: 16),
+
+                    // App Version Display
+                    Text(
+                      _appVersion,
+                      style: const TextStyle(
+                        fontSize: 12,
+                        color: Color.fromARGB(255, 116, 116, 116),
+                        fontWeight: FontWeight.w400,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                  ],
+                ),
               ),
             ),
-            const SizedBox(height: 8),
           ],
         ),
       ),
@@ -600,6 +638,60 @@ class _HomeScreenMentorState extends State<HomeScreenMentor>
     );
   }
 
+  Widget _buildScheduleReviewButton() {
+    return Container(
+      width: double.infinity,
+      height: 56,
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          colors: [Color(0xFF059669), Color(0xFF10B981)],
+          begin: Alignment.centerLeft,
+          end: Alignment.centerRight,
+        ),
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFF059669).withOpacity(0.25),
+            blurRadius: 8,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(12),
+          onTap: () {
+            _handleScheduleReview();
+          },
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 24),
+            child: const Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(
+                  Icons.schedule_outlined,
+                  color: Colors.white,
+                  size: 22,
+                ),
+                SizedBox(width: 12),
+                Text(
+                  'Schedule',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.white,
+                    letterSpacing: -0.1,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
   Widget _buildSaveReviewButton() {
     return Container(
       width: double.infinity,
@@ -660,6 +752,15 @@ class _HomeScreenMentorState extends State<HomeScreenMentor>
       context,
       MaterialPageRoute(
         builder: (context) => const ReviewFormScreen(),
+      ),
+    );
+  }
+
+  void _handleScheduleReview() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => const ScheduleFormScreen(),
       ),
     );
   }
