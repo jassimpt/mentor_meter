@@ -20,6 +20,8 @@ class AuthController extends ChangeNotifier {
   bool _isPasswordVisible = false;
   bool _isSignupLoading = false;
   bool _isSigninLoading = false;
+  bool _isGoogleSigninLoading = false;
+  bool _isResetPasswordLoading = false;
 
   // Getters
   AuthState get authState => _authState;
@@ -28,8 +30,10 @@ class AuthController extends ChangeNotifier {
   bool get isPasswordVisible => _isPasswordVisible;
   bool get isSignupLoading => _isSignupLoading;
   bool get isSigninLoading => _isSigninLoading;
+  bool get isGoogleSigninLoading => _isGoogleSigninLoading;
+  bool get isResetPasswordLoading => _isResetPasswordLoading;
   bool get isAuthenticated => _authState == AuthState.authenticated;
-  bool get isLoading => _isSignupLoading || _isSigninLoading;
+  bool get isLoading => _isSignupLoading || _isSigninLoading || _isGoogleSigninLoading || _isResetPasswordLoading;
 
   // Initialize auth state
   void initializeAuth() {
@@ -155,6 +159,43 @@ class AuthController extends ChangeNotifier {
     }
   }
 
+  // Google Sign in method
+  Future<bool> signInWithGoogle() async {
+    try {
+      _setGoogleSigninLoading(true);
+      _clearError();
+
+      final response = await SupabaseAuthService.signInWithGoogle();
+
+      if (response.user != null) {
+        _currentUser = response.user;
+        _authState = AuthState.authenticated;
+        return true;
+      } else {
+        _setError('Google sign in failed. Please try again.');
+        return false;
+      }
+    } on AuthException catch (e) {
+      _handleAuthException(e);
+      return false;
+    } catch (e) {
+      String errorMessage = 'Google sign in failed. Please try again.';
+      
+      // Handle specific Google Sign-In errors
+      if (e.toString().contains('cancelled')) {
+        errorMessage = 'Google sign in was cancelled.';
+      } else if (e.toString().contains('network')) {
+        errorMessage = 'Network error. Please check your connection.';
+      }
+      
+      _setError(errorMessage);
+      debugPrint('Google signin error: $e');
+      return false;
+    } finally {
+      _setGoogleSigninLoading(false);
+    }
+  }
+
   // Sign out method
   Future<bool> signOut() async {
     try {
@@ -179,7 +220,7 @@ class AuthController extends ChangeNotifier {
   // Reset password
   Future<bool> resetPassword({required String email}) async {
     try {
-      _setSigninLoading(true);
+      _setResetPasswordLoading(true);
       _clearError();
 
       await Supabase.instance.client.auth.resetPasswordForEmail(email);
@@ -192,7 +233,7 @@ class AuthController extends ChangeNotifier {
       debugPrint('Password reset error: $e');
       return false;
     } finally {
-      _setSigninLoading(false);
+      _setResetPasswordLoading(false);
     }
   }
 
@@ -204,6 +245,8 @@ class AuthController extends ChangeNotifier {
           _setError('Invalid email or password');
         } else if (e.message.contains('User already registered')) {
           _setError('An account with this email already exists');
+        } else if (e.message.contains('cancelled')) {
+          _setError('Sign in was cancelled');
         } else {
           _setError(e.message);
         }
@@ -228,6 +271,16 @@ class AuthController extends ChangeNotifier {
 
   void _setSigninLoading(bool loading) {
     _isSigninLoading = loading;
+    notifyListeners();
+  }
+
+  void _setGoogleSigninLoading(bool loading) {
+    _isGoogleSigninLoading = loading;
+    notifyListeners();
+  }
+
+  void _setResetPasswordLoading(bool loading) {
+    _isResetPasswordLoading = loading;
     notifyListeners();
   }
 
@@ -263,6 +316,22 @@ class AuthController extends ChangeNotifier {
   // Get user avatar URL
   String? get userAvatarUrl {
     return _currentUser?.userMetadata?['avatar_url'];
+  }
+
+  // Check if user signed in with Google
+  bool get isGoogleUser {
+    return _currentUser?.appMetadata?['provider'] == 'google';
+  }
+
+  // Get user profile data
+  Future<Map<String, dynamic>?> getUserProfile() async {
+    try {
+      if (!isAuthenticated) return null;
+      return await SupabaseAuthService.getUserProfile();
+    } catch (e) {
+      debugPrint('Error fetching user profile: $e');
+      return null;
+    }
   }
 
   @override

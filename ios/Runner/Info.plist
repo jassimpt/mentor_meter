@@ -2,6 +2,9 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+  <!-- Google Sign-In Client ID -->
+  	<key>GIDClientID</key>
+  	<string>568638509807-q86s4buk6mod6vvps7hh7h4ba9dvh00o.apps.googleusercontent.com</string>
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
 	<key>CFBundleDisplayName</key>
@@ -22,6 +25,26 @@
 	<string>????</string>
 	<key>CFBundleVersion</key>
 	<string>$(FLUTTER_BUILD_NUMBER)</string>
+		<!-- Google Sign-in URL Schemes -->
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+		<key>CFBundleURLName</key>
+		<string>com.pt.mentormeter</string>
+		<key>CFBundleURLSchemes</key>
+		<array>
+			<string>com.pt.mentormeter</string>
+		</array>
+		</dict>
+		<dict>
+		<key>CFBundleURLName</key>
+		<string>google</string>
+		<key>CFBundleURLSchemes</key>
+		<array>
+			<string>com.googleusercontent.apps.568638509807-q86s4buk6mod6vvps7hh7h4ba9dvh00o</string>
+		</array>
+		</dict>
+	</array>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
 	<key>UILaunchStoryboardName</key>
