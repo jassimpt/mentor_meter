@@ -6,6 +6,7 @@ import 'package:web_scoket/features/MentorMeter/modules/auth/create_account_scre
 import 'package:web_scoket/features/MentorMeter/modules/auth/widgets/custom_fields.dart';
 import 'package:web_scoket/features/MentorMeter/modules/auth/widgets/custom_google_button.dart';
 import 'package:web_scoket/features/MentorMeter/modules/home/home_screen.dart';
+import 'package:web_scoket/features/MentorMeter/modules/paymentConfig/payment_config_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -79,13 +80,12 @@ class _LoginScreenState extends State<LoginScreen>
           duration: Duration(seconds: 2),
         ),
       );
-
-      Navigator.pushAndRemoveUntil(
-          context,
-          MaterialPageRoute(
-            builder: (context) => HomeScreenMentor(),
-          ),
-          (route) => false);
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => PaymentConfigScreen(isFromLogin: true),
+        ),
+      );
     }
   }
 
@@ -307,9 +307,7 @@ class _LoginScreenState extends State<LoginScreen>
                         const SizedBox(height: 24),
 
                         CustomGoogleButton(
-                          onSuccess: () {
-                            
-                          },
+                          onSuccess: () {},
                         ),
 
                         const SizedBox(height: 32),

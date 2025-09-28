@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:web_scoket/features/MentorMeter/modules/auth/controllers/auth_controller.dart';
 import 'package:web_scoket/features/MentorMeter/modules/home/home_screen.dart';
+import 'package:web_scoket/features/MentorMeter/modules/paymentConfig/payment_config_screen.dart';
 
 class CustomGoogleButton extends StatelessWidget {
   final VoidCallback? onSuccess;
@@ -118,7 +119,9 @@ class CustomGoogleButton extends StatelessWidget {
           Navigator.pushAndRemoveUntil(
             context,
             MaterialPageRoute(
-              builder: (context) => HomeScreenMentor(),
+              builder: (context) => PaymentConfigScreen(
+                isFromLogin: true,
+              ),
             ),
             (route) => false,
           );

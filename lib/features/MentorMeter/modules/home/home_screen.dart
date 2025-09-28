@@ -5,6 +5,7 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:web_scoket/core/constants/app_constants.dart';
 import 'package:web_scoket/features/MentorMeter/modules/auth/controllers/auth_controller.dart';
 import 'package:web_scoket/features/MentorMeter/modules/home/widgets/review_card.dart';
+import 'package:web_scoket/features/MentorMeter/modules/paymentConfig/payment_config_screen.dart';
 import 'package:web_scoket/features/MentorMeter/modules/reports/review_reports_screen.dart';
 import 'package:web_scoket/features/MentorMeter/modules/reports/schedule_reports_screen.dart';
 import 'package:web_scoket/features/MentorMeter/modules/reviewForm/controller/review_controller.dart';
@@ -53,6 +54,7 @@ class _HomeScreenMentorState extends State<HomeScreenMentor>
     _loadAppVersion();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       context.read<ReviewController>().fetchReviews();
+      context.read<ReviewController>().loadPaymentAmount();
     });
   }
 
@@ -530,11 +532,25 @@ class _HomeScreenMentorState extends State<HomeScreenMentor>
                       },
                     ),
                     _buildMenuOption(
-                      icon: Icons.settings_outlined,
-                      title: 'Settings',
-                      onTap: () {
-                        Navigator.pop(context);
-                        // Navigate to settings
+                      icon: Icons.payments_outlined,
+                      title: 'Payment Settings',
+                      onTap: () async {
+                        final result = await Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const PaymentConfigScreen(
+                              isFromLogin: false,
+                            ),
+                          ),
+                        );
+
+                        // If payment was updated, refresh the review controller
+                        if (result == true && mounted) {
+                          final reviewController =
+                              context.read<ReviewController>();
+                          await reviewController
+                              .loadPaymentAmount(); // This will trigger UI update
+                        }
                       },
                     ),
                     _buildMenuOption(
@@ -583,7 +599,10 @@ class _HomeScreenMentorState extends State<HomeScreenMentor>
 
     try {
       if (await canLaunchUrl(linkedInUrl)) {
-        await launchUrl(linkedInUrl, mode: LaunchMode.externalApplication);
+        await launchUrl(
+          linkedInUrl,
+          mode: LaunchMode.platformDefault,
+        );
       } else {
         // Show error message if URL can't be launched
         if (mounted) {

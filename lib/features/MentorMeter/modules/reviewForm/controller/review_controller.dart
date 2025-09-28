@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:web_scoket/features/MentorMeter/modules/reviewForm/service/review_service.dart';
 import '../models/review_model.dart';
 
@@ -12,8 +13,9 @@ enum ReviewState {
 class ReviewController extends ChangeNotifier {
   final ReviewService _reviewService = ReviewService();
 
-  // Payment per review constant
-  static const double singleReviewPayment = 250.0;
+  // Payment per review - will be loaded from SharedPreferences
+  double _singleReviewPayment = 0;
+  double get singleReviewPayment => _singleReviewPayment;
 
   // State management
   ReviewState _state = ReviewState.idle;
@@ -35,6 +37,42 @@ class ReviewController extends ChangeNotifier {
 
   Map<String, dynamic>? _statistics;
   Map<String, dynamic>? get statistics => _statistics;
+
+  // Constructor - Initialize payment amount
+  ReviewController() {
+    loadPaymentAmount();
+  }
+
+  // Load payment amount from SharedPreferences
+  Future<void> loadPaymentAmount() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final savedPayment = prefs.getDouble('per_review_payment');
+      if (savedPayment != null) {
+        _singleReviewPayment = savedPayment;
+        notifyListeners(); // Notify listeners to update UI with new payment amount
+      }
+    } catch (e) {
+      // If error loading, keep default value
+      if (kDebugMode) {
+        print('Error loading payment amount: $e');
+      }
+    }
+  }
+
+  // Method to update payment amount (called when user changes it)
+  Future<void> updatePaymentAmount(double newAmount) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setDouble('per_review_payment', newAmount);
+      _singleReviewPayment = newAmount;
+      notifyListeners(); // Update UI with new calculations
+    } catch (e) {
+      if (kDebugMode) {
+        print('Error saving payment amount: $e');
+      }
+    }
+  }
 
   // Private method to set state and notify listeners
   void _setState(ReviewState newState, {String? error}) {
@@ -272,7 +310,7 @@ class ReviewController extends ChangeNotifier {
     }).toList();
   }
 
-  // NEW STATISTICS METHODS
+  // STATISTICS METHODS - Updated to use dynamic payment amount
 
   /// Get total reviews this month
   int get totalReviewsThisMonth {
@@ -284,9 +322,9 @@ class ReviewController extends ChangeNotifier {
     }).length;
   }
 
-  /// Get total payment this month (reviews * payment per review)
+  /// Get total payment this month (reviews * dynamic payment per review)
   double get totalPaymentThisMonth {
-    return totalReviewsThisMonth * singleReviewPayment;
+    return totalReviewsThisMonth * _singleReviewPayment;
   }
 
   /// Get total reviews today
@@ -299,9 +337,9 @@ class ReviewController extends ChangeNotifier {
     }).length;
   }
 
-  /// Get total earnings today (today's reviews * payment per review)
+  /// Get total earnings today (today's reviews * dynamic payment per review)
   double get totalEarningsToday {
-    return totalReviewsToday * singleReviewPayment;
+    return totalReviewsToday * _singleReviewPayment;
   }
 
   /// Get formatted total payment this month as string
