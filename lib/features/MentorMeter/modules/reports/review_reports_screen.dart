@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:web_scoket/features/MentorMeter/core/utils/pdf_service.dart';
 import 'package:web_scoket/features/MentorMeter/modules/reviewForm/controller/review_controller.dart';
 import 'package:web_scoket/features/MentorMeter/modules/home/widgets/review_card.dart';
 
@@ -15,10 +16,10 @@ class _ReviewReportsScreenState extends State<ReviewReportsScreen>
   late AnimationController _animationController;
   late Animation<double> _fadeAnimation;
   late Animation<Offset> _slideAnimation;
-  
+
   final TextEditingController _searchController = TextEditingController();
   final FocusNode _searchFocusNode = FocusNode();
-  
+
   DateTime? _selectedStartDate;
   DateTime? _selectedEndDate;
   String _searchTerm = '';
@@ -29,7 +30,7 @@ class _ReviewReportsScreenState extends State<ReviewReportsScreen>
     super.initState();
     _initializeAnimations();
     _setupSearch();
-    
+
     // Fetch initial reviews
     WidgetsBinding.instance.addPostFrameCallback((_) {
       context.read<ReviewController>().fetchReviews();
@@ -74,18 +75,98 @@ class _ReviewReportsScreenState extends State<ReviewReportsScreen>
   }
 
   void _performSearch() {
-    if (_searchTerm.isEmpty && _selectedStartDate == null && _selectedEndDate == null) {
+    if (_searchTerm.isEmpty &&
+        _selectedStartDate == null &&
+        _selectedEndDate == null) {
       // No filters, fetch all reviews
       context.read<ReviewController>().fetchReviews();
     } else if (_selectedStartDate != null && _selectedEndDate != null) {
       // Date range filter with optional search
       context.read<ReviewController>().fetchReviewsByDateRange(
-        _selectedStartDate!,
-        _selectedEndDate!,
-      );
+            _selectedStartDate!,
+            _selectedEndDate!,
+          );
     } else if (_searchTerm.isNotEmpty) {
       // Search filter
       context.read<ReviewController>().searchReviews(_searchTerm);
+    }
+  }
+
+  Future<void> _generatePDF() async {
+    final reviewController = context.read<ReviewController>();
+
+    if (reviewController.reviews.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text('No reviews available to generate report'),
+          backgroundColor: const Color(0xFFEF4444),
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+        ),
+      );
+      return;
+    }
+
+    try {
+      // Show loading indicator
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Row(
+            children: [
+              SizedBox(
+                width: 20,
+                height: 20,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                ),
+              ),
+              SizedBox(width: 12),
+              Text('Generating PDF report...'),
+            ],
+          ),
+          backgroundColor: const Color(0xFF4F46E5),
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+          duration: const Duration(seconds: 30),
+        ),
+      );
+
+      await reviewController.loadPaymentAmount();
+
+      // Generate PDF (adjust paymentPerReview as needed)
+      await PdfService.generateAndOpenReport(
+        reviews: reviewController.reviews,
+        paymentPerReview: reviewController.singleReviewPayment,
+      );
+
+      // Hide loading and show success
+      ScaffoldMessenger.of(context).clearSnackBars();
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Row(
+            children: [
+              Icon(Icons.check_circle, color: Colors.white, size: 20),
+              SizedBox(width: 12),
+              Text('PDF generated successfully'),
+            ],
+          ),
+          backgroundColor: const Color(0xFF10B981),
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+        ),
+      );
+    } catch (e) {
+      // Hide loading and show error
+      ScaffoldMessenger.of(context).clearSnackBars();
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Failed to generate PDF: ${e.toString()}'),
+          backgroundColor: const Color(0xFFEF4444),
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+        ),
+      );
     }
   }
 
@@ -188,24 +269,71 @@ class _ReviewReportsScreenState extends State<ReviewReportsScreen>
                             ),
                           ),
                           const SizedBox(width: 16),
-                          
+
                           // Title
-                          const Expanded(
-                            child: Text(
-                              'Review Reports',
-                              style: TextStyle(
-                                fontSize: 22,
-                                fontWeight: FontWeight.w600,
-                                color: Color(0xFF1F2937),
-                                letterSpacing: -0.2,
-                              ),
+                          Expanded(
+                            child: Row(
+                              children: [
+                                const Text(
+                                  'Review Reports',
+                                  style: TextStyle(
+                                    fontSize: 22,
+                                    fontWeight: FontWeight.w600,
+                                    color: Color(0xFF1F2937),
+                                    letterSpacing: -0.2,
+                                  ),
+                                ),
+                                const Spacer(),
+                                // PDF Generate Button
+                                Container(
+                                  height: 44,
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFFF8FAFC),
+                                    borderRadius: BorderRadius.circular(12),
+                                    border: Border.all(
+                                      color: const Color(0xFFE2E8F0),
+                                      width: 1,
+                                    ),
+                                  ),
+                                  child: Material(
+                                    color: Colors.transparent,
+                                    child: InkWell(
+                                      borderRadius: BorderRadius.circular(12),
+                                      onTap: _generatePDF,
+                                      child: Padding(
+                                        padding: const EdgeInsets.symmetric(
+                                            horizontal: 16),
+                                        child: Row(
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: [
+                                            const Icon(
+                                              Icons.picture_as_pdf_rounded,
+                                              color: Color(0xFF4F46E5),
+                                              size: 20,
+                                            ),
+                                            const SizedBox(width: 8),
+                                            const Text(
+                                              'PDF',
+                                              style: TextStyle(
+                                                fontSize: 14,
+                                                fontWeight: FontWeight.w600,
+                                                color: Color(0xFF4F46E5),
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ],
                             ),
                           ),
                         ],
                       ),
-                      
+
                       const SizedBox(height: 24),
-                      
+
                       // Search and Filter Row
                       Row(
                         children: [
@@ -250,9 +378,9 @@ class _ReviewReportsScreenState extends State<ReviewReportsScreen>
                               ),
                             ),
                           ),
-                          
+
                           const SizedBox(width: 12),
-                          
+
                           // Date Filter Button
                           Container(
                             height: 48,
@@ -274,7 +402,8 @@ class _ReviewReportsScreenState extends State<ReviewReportsScreen>
                                 borderRadius: BorderRadius.circular(12),
                                 onTap: _selectDateRange,
                                 child: Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 16),
                                   child: Icon(
                                     Icons.date_range_rounded,
                                     color: _selectedStartDate != null
@@ -288,7 +417,7 @@ class _ReviewReportsScreenState extends State<ReviewReportsScreen>
                           ),
                         ],
                       ),
-                      
+
                       // Active Filters Display
                       if (_selectedStartDate != null || _searchTerm.isNotEmpty)
                         Container(
@@ -315,13 +444,16 @@ class _ReviewReportsScreenState extends State<ReviewReportsScreen>
                                     _searchController.clear();
                                   },
                                 ),
-                              if (_selectedStartDate != null || _searchTerm.isNotEmpty)
+                              if (_selectedStartDate != null ||
+                                  _searchTerm.isNotEmpty)
                                 TextButton(
                                   onPressed: _clearFilters,
                                   style: TextButton.styleFrom(
-                                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                                    padding: const EdgeInsets.symmetric(
+                                        horizontal: 12, vertical: 6),
                                     minimumSize: const Size(0, 0),
-                                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                                    tapTargetSize:
+                                        MaterialTapTargetSize.shrinkWrap,
                                   ),
                                   child: const Text(
                                     'Clear All',
@@ -340,7 +472,7 @@ class _ReviewReportsScreenState extends State<ReviewReportsScreen>
                 ),
               ),
             ),
-            
+
             // Reviews List
             Expanded(
               child: FadeTransition(
@@ -403,14 +535,14 @@ class _ReviewReportsScreenState extends State<ReviewReportsScreen>
 
   String _formatDateRange() {
     if (_selectedStartDate == null || _selectedEndDate == null) return '';
-    
+
     final start = _selectedStartDate!;
     final end = _selectedEndDate!;
-    
+
     if (start.isAtSameMomentAs(end)) {
       return '${start.day}/${start.month}/${start.year}';
     }
-    
+
     return '${start.day}/${start.month} - ${end.day}/${end.month}';
   }
 
@@ -420,7 +552,8 @@ class _ReviewReportsScreenState extends State<ReviewReportsScreen>
     }
 
     if (reviewController.hasError) {
-      return _buildErrorState(reviewController.errorMessage ?? 'Unknown error occurred');
+      return _buildErrorState(
+          reviewController.errorMessage ?? 'Unknown error occurred');
     }
 
     if (reviewController.isEmpty) {
@@ -559,7 +692,7 @@ class _ReviewReportsScreenState extends State<ReviewReportsScreen>
 
   Widget _buildEmptyState() {
     final hasFilters = _selectedStartDate != null || _searchTerm.isNotEmpty;
-    
+
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(24),
@@ -577,7 +710,9 @@ class _ReviewReportsScreenState extends State<ReviewReportsScreen>
                 ),
               ),
               child: Icon(
-                hasFilters ? Icons.search_off_rounded : Icons.rate_review_outlined,
+                hasFilters
+                    ? Icons.search_off_rounded
+                    : Icons.rate_review_outlined,
                 color: const Color(0xFF6B7280),
                 size: 32,
               ),
@@ -593,7 +728,7 @@ class _ReviewReportsScreenState extends State<ReviewReportsScreen>
             ),
             const SizedBox(height: 8),
             Text(
-              hasFilters 
+              hasFilters
                   ? 'Try adjusting your search or date filters'
                   : 'Reviews will appear here once you start creating them',
               style: const TextStyle(

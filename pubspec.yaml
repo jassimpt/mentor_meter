@@ -36,7 +36,10 @@ dependencies:
   shared_preferences: ^2.5.3
   url_launcher: ^6.3.1
   google_sign_in: ^6.2.2
+  open_filex: ^4.7.0
+  pdf: ^3.11.3
   intl: ^0.20.2
+  path_provider: ^2.1.5
   flutter:
     sdk: flutter
 
@@ -79,6 +82,14 @@ flutter:
   assets:
     - .env
     - assets/images/
+    - assets/fonts/
+
+  fonts:
+    - family: NotoSans
+      fonts:
+        - asset: assets/fonts/NotoSans-Regular.ttf
+        - asset: assets/fonts/NotoSans-Bold.ttf
+          weight: 700
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/assets-and-images/#resolution-aware
